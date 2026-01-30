@@ -14,13 +14,14 @@ const PORT = process.env.PORT || 3000
 
 app.use(express.json())
 app.use(cors({
-    origin:['https://product-manager-frontend-chi.vercel.app/login',
-        'https://product-manager-frontend-cii4stmzq.vercel.app/'
-
-    ],
-
-    credentials:true
+  origin: [
+    "http://localhost:5173",
+    "https://product-manager-frontend-chi.vercel.app",
+    "https://product-manager-frontend-cii4stmzq.vercel.app"
+  ],
+  credentials: true
 }))
+
 
 app.use('/auth', authRoute)
 app.use('/user', userRoute)
