@@ -114,7 +114,7 @@ export const loginUser = async (req, res) => {
         }
         const passwordCheck = await bcrypt.compare(password, user.password)
         if (!passwordCheck) {
-            return res.status(401).json({
+            return res.status(402).json({
                 success: false,
                 message: "Incorrect Password"
             })
@@ -176,10 +176,38 @@ export const logoutUser = async (req, res) => {
     }
 }
 
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email })
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            })
+        }
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiry = new Date(Date.now() + 10 * 60 * 1000)
+
+        user.otp = otp;
+        user.otpExpiry = expiry;
+        await user.save()
+        await sendOtpMail(email, otp);
+        return res.status(200).json({
+            success:true,
+            message:"OTP sent successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
 export const verifyOTP = async (req, res)=>{
     const {otp} = req.body
     const email = req.params.email
-
 
     if(!otp){
         return res.status(400).json({
@@ -187,7 +215,6 @@ export const verifyOTP = async (req, res)=>{
             message:"OTP is requried"
         })
     }
-
 
     try {
         const user = await User.findOne({email})
@@ -216,15 +243,56 @@ export const verifyOTP = async (req, res)=>{
             })
         }
 
-
         user.otp = null
         user.otpExpiry = null
         await user.save()
 
-
         return res.status(200).json({
             success:true,
             message:"OTP verified successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success:false,
+            message:"Internal server error"
+        })
+    }
+}
+
+export const changePassword = async (req, res)=>{
+    const {newPassword, confirmPassword} = req.body
+    const email = req.params.email
+    
+    if(!newPassword || !confirmPassword){
+        return res.status(400).json({
+            success:false,
+            message:"All fields are required"
+        })
+    }
+
+    if(newPassword !== confirmPassword) {
+        return res.status(400).json({
+            success:false,
+            message:"Password do not match"
+        })
+    }
+
+    try {
+        const user = await User.findOne({email})
+        if(!user){
+            return res.status(404).json({
+                success:false,
+                message:"User not found"
+            })
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+        user.password = hashedPassword
+        await user.save()
+
+        return res.status(200).json({
+            success:true,
+            message:"Password changed successsfully"
         })
     } catch (error) {
         return res.status(500).json({
