@@ -22,6 +22,11 @@ app.use(cors({
   credentials: true
 }))
 
+app.get("/", (req, res) => {
+  res.send("API is running 🚀");
+});
+
+
 
 app.use('/auth', authRoute)
 app.use('/user', userRoute)
